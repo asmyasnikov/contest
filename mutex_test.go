@@ -99,6 +99,30 @@ func init() {
 	}
 }
 
+func TestMutexDeadlock(t *testing.T) {
+	mu := contest.New()
+	stop := make(chan bool)
+	defer close(stop)
+	lockedTwice := make(chan bool)
+	go func() {
+		mu.Lock()
+		defer mu.Unlock()
+		select {
+		case <-mu.LockChannel():
+			close(lockedTwice)
+			return
+		case <-stop:
+			return
+		}
+	}()
+	select {
+	case <-lockedTwice:
+		t.Fatalf("mutex locked twice")
+	case <-time.After(10 * time.Second):
+		// nop
+	}
+}
+
 func TestMutexFairness(t *testing.T) {
 	mu := contest.New()
 	stop := make(chan bool)

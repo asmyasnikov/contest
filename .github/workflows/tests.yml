@@ -58,3 +58,38 @@ jobs:
           file: ./benchmarks.txt
           flags: benchmarks,${{ matrix.os }},${{ matrix.go-version }}
           name: benchmarks
+  misuse:
+    concurrency:
+      group: misuse-${{ github.ref }}-${{ matrix.os }}-${{ matrix.go-version }}
+      cancel-in-progress: true
+    strategy:
+      matrix:
+        go-version: [1.16.x, 1.18.x, 1.19.x]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    env:
+      OS: ${{ matrix.os }}
+      GO: ${{ matrix.go-version }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Mutex.Unlock
+        run: go test -race -coverprofile misuse.txt -covermode atomic ./... -args TESTMISUSE Mutex.Unlock
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          file: ./misuse.txt
+          flags: misuse,${{ matrix.os }},${{ matrix.go-version }}
+          name: misuse
+      - name: Mutex.Unlock2
+        run: go test -race -coverprofile misuse.txt -covermode atomic ./... -args TESTMISUSE Mutex.Unlock2
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          file: ./misuse.txt
+          flags: misuse,${{ matrix.os }},${{ matrix.go-version }}
+          name: misuse

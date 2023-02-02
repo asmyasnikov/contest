@@ -38,7 +38,7 @@ func TestMutex(t *testing.T) {
 	m.Lock()
 	select {
 	case <-m.LockChannel():
-		t.Fatalf("LockChannel succeeded with mutex locked")
+		t.Fatalf("LockChannel succeeded with chMutex locked")
 	default:
 		// nop
 	}
@@ -47,7 +47,7 @@ func TestMutex(t *testing.T) {
 	case <-m.LockChannel():
 		// nop
 	default:
-		t.Fatalf("LockChannel failed with mutex unlocked")
+		t.Fatalf("LockChannel failed with chMutex unlocked")
 	}
 	m.Unlock()
 
@@ -117,7 +117,7 @@ func TestMutexDeadlock(t *testing.T) {
 	}()
 	select {
 	case <-lockedTwice:
-		t.Fatalf("mutex locked twice")
+		t.Fatalf("chMutex locked twice")
 	case <-time.After(10 * time.Second):
 		// nop
 	}
@@ -208,12 +208,12 @@ func BenchmarkMutexWorkSlack(b *testing.B) {
 }
 
 func BenchmarkMutexNoSpin(b *testing.B) {
-	// This benchmark models a situation where spinning in the mutex should be
+	// This benchmark models a situation where spinning in the chMutex should be
 	// non-profitable and allows to confirm that spinning does not do harm.
 	// To achieve this we create excess of goroutines most of which do local work.
 	// These goroutines yield during local work, so that switching from
 	// a blocked goroutine to other goroutines is profitable.
-	// As a matter of fact, this benchmark still triggers some spinning in the mutex.
+	// As a matter of fact, this benchmark still triggers some spinning in the chMutex.
 	m := contest.New()
 	var acc0, acc1 uint64
 	b.SetParallelism(4)
@@ -242,7 +242,7 @@ func BenchmarkMutexNoSpin(b *testing.B) {
 }
 
 func BenchmarkMutexSpin(b *testing.B) {
-	// This benchmark models a situation where spinning in the mutex should be
+	// This benchmark models a situation where spinning in the chMutex should be
 	// profitable. To achieve this we create a goroutine per-proc.
 	// These goroutines access considerable amount of local data so that
 	// unnecessary rescheduling is penalized by cache misses.

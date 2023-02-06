@@ -140,6 +140,44 @@ func TestMutexLockedChannelTwice(t *testing.T) {
 	}
 }
 
+func TestMutexLockInTheFuture(t *testing.T) {
+	mu := contest.New()
+	mu.Lock()
+	var (
+		lockedChannel = mu.LockChannel()
+		simpleLock    = make(chan struct{})
+		selectLock    = make(chan struct{})
+		timeout       = make(chan struct{})
+	)
+	mu.Unlock()
+	go func() {
+		mu.Lock()
+		defer mu.Unlock()
+		close(simpleLock)
+	}()
+	go func() {
+		select {
+		case <-time.After(time.Second):
+			close(timeout)
+		case <-lockedChannel:
+			close(selectLock)
+			mu.Unlock()
+		}
+	}()
+	select {
+	case <-time.After(time.Second):
+		t.Fatalf("can't lock simple")
+	case <-simpleLock:
+		t.Logf("expected behaviour")
+	}
+	select {
+	case <-timeout:
+		t.Fatalf("can't lock by select")
+	case <-selectLock:
+		t.Logf("mutex locked by select")
+	}
+}
+
 func TestMutexFairness(t *testing.T) {
 	mu := contest.New()
 	stop := make(chan bool)

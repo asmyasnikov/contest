@@ -1,4 +1,4 @@
-# contest
+# contest-internal
 
 ## Задание для контеста Мастерской для go-разработчиков
 
@@ -7,6 +7,9 @@
 type Mutex interface {
 	Lock()
 	Unlock()
+
+	// LockChannel возвращает канал блокировки -
+	// вычитывание из канала приводит к блокировке мьютекса
 	LockChannel() <-chan struct{}
 }
 ```
@@ -31,7 +34,7 @@ mu.Unlock()
 
 2. Как `LockChannel` мьютекс
 ```go
-ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+ctx, cancel := context.WithTimeout(context.Background(). time.Second)
 defer cancel()
 select {
 case <-ctx.Done():
